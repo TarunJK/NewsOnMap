@@ -9,9 +9,10 @@ app.get('/news', async (req, res) => {
   const { theme, timespan } = req.query;
   
   const query = theme ? `theme:${theme}` : 'war OR climate OR economy OR health OR science OR protest';
-  const time = timespan || '24h';
+  // GDELT GEO API timespan is in MINUTES only
+  const minutes = timespan === '168h' ? 10080 : 1440; // 7 days or 24 hours
   
-  const url = `https://api.gdeltproject.org/api/v2/geo/geo?query=${encodeURIComponent(query)}&mode=pointdata&format=json&timespan=${time}&maxrecords=250`;
+  const url = `https://api.gdeltproject.org/api/v2/geo/geo?query=${encodeURIComponent(query)}&mode=pointdata&format=geojson&timespan=${minutes}&maxrecords=250`;
   
   console.log('Fetching URL:', url);
   
@@ -26,8 +27,8 @@ app.get('/news', async (req, res) => {
     
     if (!response.ok) {
       const text = await response.text();
-      console.log('GDELT error body:', text);
-      return res.status(500).json({ error: `GDELT returned ${response.status}`, body: text });
+      console.log('GDELT error body:', text.substring(0, 500));
+      return res.status(500).json({ error: `GDELT returned ${response.status}` });
     }
     
     const data = await response.json();
